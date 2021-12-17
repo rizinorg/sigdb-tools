@@ -44,21 +44,27 @@ class SigMake(object):
 	def generate(self):
 		if IS_VERB:
 			print('Generating signature for {} in {}'.format(os.path.basename(self.file_in), os.path.basename(self.file_out)))
-		os.system("{} -q -a -e 'flirt.node.optimize=0' -o '{}' '{}'".format(RZ_SIGN, self.file_out, self.file_in))
+		os.system("{} -q -a -e 'flirt.node.optimize=0' -e 'bin.demangle=false' -o '{}' '{}'".format(RZ_SIGN, self.file_out, self.file_in))
 
 class Deb(object):
-	def __init__(self, file):
+	def __init__(self, file, idx):
 		super(Deb, self).__init__()
 		self.file = file
+		self.idx = idx
 
 	def create_pac(self, out_dir):
-		print('Unpacking & sigmake for {}'.format(self.file))
+		print('[{}] Unpacking & sigmake for {}'.format(self.idx, self.file))
+		os.system("sha1sum '{}' > '{}'".format(self.file, os.path.join(out_dir, "hash.txt")))
 		cwd = os.getcwd()
 		with tempfile.TemporaryDirectory() as tmpdir:
 			os.chdir(tmpdir)
 			system_die("ar x '{}'".format(self.file))
 			system_die("tar xf data.tar.*")
 			output = system("find . -name '{}' -type f".format(SRC_LIB))
+			if len(output) < 1:
+				print('cannot find', SRC_LIB)
+				os.chdir(cwd)
+				return
 			filepath = os.path.abspath(output.strip())
 			os.mkdir(OBJ_DIR)
 			os.chdir(OBJ_DIR)
@@ -168,7 +174,7 @@ def main():
 		distro, name, arch, libname, _ = deb.replace(scr_dir + os.path.sep, "").split(os.path.sep, 4)
 		if arch not in archs:
 			archs[arch] = Arch(arch)
-		archs[arch].add(libname, distro + "-" + name, Deb(deb))
+		archs[arch].add(libname, distro + "-" + name, Deb(deb, n_debs))
 		n_debs += 1
 
 	print("found {} deb".format(n_debs))

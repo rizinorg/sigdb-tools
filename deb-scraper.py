@@ -151,7 +151,7 @@ if __name__ == '__main__':
 	args = parser.parse_args()
 
 	packages = args.packages.split(',')
-	architectures = args.archs.split(',')
+	architectures = [] if args.archs == '' else args.archs.split(',')
 	distribution = args.distro
 	verbose = args.verbose
 
@@ -159,9 +159,6 @@ if __name__ == '__main__':
 		parser.print_help(sys.stderr)
 		sys.exit(1)
 
-	print(packages)
+	sem = asyncio.Queue(maxsize=args.threads)
+	asyncio.run(main())
 
-	loop = asyncio.get_event_loop()
-	sem = asyncio.Queue(loop=loop, maxsize=args.threads)
-	loop.run_until_complete(main())
-	loop.close()
