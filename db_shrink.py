@@ -19,6 +19,10 @@ def listfiles(path):
 def is_bad_symbol(name):
 	if name.startswith('case.0x'):
 		return True
+	elif name.startswith('fcn.'):
+		return True
+	elif name == 'entry0':
+		return True
 	return False
 
 def similarity(a, b):
