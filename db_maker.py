@@ -15,7 +15,8 @@ RZ_SIGN = "rz-sign"
 IS_VERB = False
 DESCRIPTION='Rizin (source) signature database maker for deb files'
 EPILOG=''
-
+DEBCURRN=0
+DEBTOTAL=0
 
 def system(cmd):
 	output = ""
@@ -42,18 +43,22 @@ class SigMake(object):
 		sm.generate()
 
 	def generate(self):
+		global IS_VERB, RZ_SIGN
+		log_level=6
 		if IS_VERB:
 			print('Generating signature for {} in {}'.format(os.path.basename(self.file_in), os.path.basename(self.file_out)))
-		os.system("{} -q -a -e 'flirt.node.optimize=0' -e 'bin.demangle=false' -o '{}' '{}'".format(RZ_SIGN, self.file_out, self.file_in))
+			log_level=5
+		os.system("{} -q -a -e 'flirt.node.optimize=0' -e 'bin.demangle=false' -e 'log.level={}' -o '{}' '{}'".format(RZ_SIGN, log_level, self.file_out, self.file_in))
 
 class Deb(object):
-	def __init__(self, file, idx):
+	def __init__(self, file):
 		super(Deb, self).__init__()
 		self.file = file
-		self.idx = idx
 
 	def create_pac(self, out_dir):
-		print('[{}] Unpacking & sigmake for {}'.format(self.idx, self.file))
+		global DEBCURRN
+		DEBCURRN += 1
+		print('[{}|{}] Unpacking & sigmake for {}'.format(DEBCURRN, DEBTOTAL, self.file))
 		os.system("sha1sum '{}' > '{}'".format(self.file, os.path.join(out_dir, "hash.txt")))
 		cwd = os.getcwd()
 		with tempfile.TemporaryDirectory() as tmpdir:
@@ -83,7 +88,7 @@ class Deb(object):
 				print("WARNING: unknown file spotted in unpacked .a:", file)
 				continue
 			file_in = os.path.abspath(file)
-			file_out = os.path.join(out_dir, os.path.basename(file) + ".pac")
+			file_out = os.path.join(out_dir, os.path.basename(file) + ".pat")
 			mapped.append(SigMake(file_in, file_out))
 
 		with multiprocessing.Pool() as pool:
@@ -149,7 +154,7 @@ def main():
 		parser.print_help(sys.stderr)
 		sys.exit(1)
 
-	global IS_VERB, SRC_LIB, RZ_SIGN
+	global IS_VERB, SRC_LIB, RZ_SIGN, DEBTOTAL
 	IS_VERB = args.verbose
 	SRC_LIB = args.library
 	RZ_SIGN = args.rz_sign
@@ -172,12 +177,15 @@ def main():
 			print("using", deb)
 
 		distro, name, arch, libname, _ = deb.replace(scr_dir + os.path.sep, "").split(os.path.sep, 4)
+		if arch != args.arch and args.arch != "all":
+			continue
 		if arch not in archs:
 			archs[arch] = Arch(arch)
-		archs[arch].add(libname, distro + "-" + name, Deb(deb, n_debs))
+		archs[arch].add(libname, distro + "-" + name, Deb(deb))
 		n_debs += 1
 
-	print("found {} deb".format(n_debs))
+	DEBTOTAL = n_debs
+	print("found {} deb".format(DEBTOTAL))
 	exec_once = False
 	for a in archs:
 		if a != args.arch and args.arch != "all":
