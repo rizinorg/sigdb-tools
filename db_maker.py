@@ -65,20 +65,23 @@ class Deb(object):
 			os.chdir(tmpdir)
 			system_die("ar x '{}'".format(self.file))
 			system_die("tar xf data.tar.*")
-			output = system("find . -name '{}' -type f".format(SRC_LIB))
+			output = system("find . -type f -name '{}'".format(SRC_LIB))
 			if len(output) < 1:
 				print('cannot find', SRC_LIB)
 				os.chdir(cwd)
 				return
-			filepath = os.path.abspath(output.strip())
-			os.mkdir(OBJ_DIR)
-			os.chdir(OBJ_DIR)
-			system_die("ar x '{}'".format(filepath))
-			files = os.listdir()
-			if len(files) < 1:
-				print("no files were unpacked from", filepath)
-				sys.exit(1)
-			self._run_threaded(files, out_dir)
+			for slib in output.split('\n'):
+				filepath = os.path.abspath(slib.strip())
+				bname = os.path.basename(filepath)
+				os.mkdir(OBJ_DIR + bname + ".ext")
+				os.chdir(OBJ_DIR + bname + ".ext")
+				system_die("ar x '{}'".format(filepath))
+				files = os.listdir()
+				if len(files) < 1:
+					print("no files were unpacked from", filepath)
+					os.chdir(tmpdir)
+					continue
+				self._run_threaded(files, out_dir)
 		os.chdir(cwd)
 
 	def _run_threaded(self, files, out_dir):
