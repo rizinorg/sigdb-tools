@@ -41,7 +41,7 @@ Copyright (c) 2021 RizinOrg <info@rizin.re>
 Copyright (c) 2015-2020 Vector 35 Inc
 
 Example:
-	python deb-scraper.py -t 5 -d debian -p 'musl-dev,openssl' -a 'amd64,i386'
+	python launchpad-deb-scraper.py -t 5 -d ubuntu -p 'musl-dev,openssl' -a 'amd64,i386'
 
 '''
 
