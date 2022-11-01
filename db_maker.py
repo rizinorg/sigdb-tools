@@ -17,6 +17,7 @@ DESCRIPTION='Rizin (source) signature database maker for deb files'
 EPILOG=''
 DEBCURRN=0
 DEBTOTAL=0
+TEMPDIR=None
 
 def system(cmd):
 	output = ""
@@ -61,7 +62,7 @@ class Deb(object):
 		print('[{}|{}] Unpacking & sigmake for {}'.format(DEBCURRN, DEBTOTAL, self.file))
 		os.system("sha1sum '{}' > '{}'".format(self.file, os.path.join(out_dir, "hash.txt")))
 		cwd = os.getcwd()
-		with tempfile.TemporaryDirectory() as tmpdir:
+		with tempfile.TemporaryDirectory(dir=TEMPDIR) as tmpdir:
 			os.chdir(tmpdir)
 			system_die("ar x '{}'".format(self.file))
 			system_die("tar xf data.tar.*")
@@ -140,6 +141,7 @@ def main():
 	parser = argparse.ArgumentParser(usage='%(prog)s [options]', description=DESCRIPTION, epilog=EPILOG, formatter_class=argparse.RawDescriptionHelpFormatter)
 	parser.add_argument('-v', '--verbose', default=False, help='verbose', action='store_true')
 	parser.add_argument('-i', '--scrdir', help='scraper directory')
+	parser.add_argument('-t', '--tmpdir', help='temp directory')
 	parser.add_argument('-o', '--output', help='output directory')
 	parser.add_argument('-a', '--arch', default='all', help='architecture name')
 	parser.add_argument('-f', '--filter', help='filter deb name')
@@ -157,10 +159,11 @@ def main():
 		parser.print_help(sys.stderr)
 		sys.exit(1)
 
-	global IS_VERB, SRC_LIB, RZ_SIGN, DEBTOTAL
+	global IS_VERB, SRC_LIB, RZ_SIGN, DEBTOTAL, TEMPDIR
 	IS_VERB = args.verbose
 	SRC_LIB = args.library
 	RZ_SIGN = args.rz_sign
+	TEMPDIR = args.tmpdir
 
 	archs = {}
 	scr_dir = os.path.abspath(args.scrdir)
