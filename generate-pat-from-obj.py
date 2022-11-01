@@ -72,7 +72,7 @@ class Locator(object):
 	def __init__(self, input, output, library):
 		super(Locator, self).__init__()
 		self.input = os.path.abspath(input)
-		self.output = os.path.abspath(output)
+		self.output = os.path.abspath(output) if len(output) > 0 else ""
 		self.library = library
 		self.lock = multiprocessing.Lock()
 
@@ -83,6 +83,7 @@ class Locator(object):
 			name = os.path.basename(source)
 			subpath = os.path.abspath(source)[len(self.input) + 1:]
 			dirp = os.path.join(self.output, btype, arch, bits, self.library, subpath)
+			dirp = os.path.dirname(dirp)
 			os.makedirs(dirp, exist_ok=True)
 			return os.path.join(dirp, name + '.pat')
 
